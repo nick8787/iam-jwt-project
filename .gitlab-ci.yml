@@ -1,0 +1,50 @@
+stages:
+  - build jar
+  - build docker
+  - deploy
+
+variables:
+  SERVICE_PORT: 7000
+  SERVICE_NAME: iam-service
+
+build jar:
+  image: maven:3.6.1-jdk-11
+  stage: build jar
+  when: manual
+
+  script:
+    - mvn clean install
+
+  artifacts:
+    paths:
+      - target/*.jar
+
+build docker:
+  image: docker:24.0.5
+  stage: build docker
+  needs:
+    - build jar
+
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE/$SERVICE_NAME:$CI_COMMIT_REF_SLUG .
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE/$SERVICE_NAME:$CI_COMMIT_REF_SLUG
+
+deploy:
+  image: docker:24.0.5
+  stage: deploy
+  needs:
+    - build jar
+    - build docker
+  when: manual
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+    - echo "$PRIVATE_SSH_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - echo "Host $EC2_PUBLIC_IP\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
+
+  script:
+    - ssh $EC2_USER@$EC2_PUBLIC_IP "docker pull $CI_REGISTRY_IMAGE/$SERVICE_NAME:$CI_COMMIT_REF_SLUG"
+    - ssh $EC2_USER@$EC2_PUBLIC_IP "docker stop $SERVICE_NAME || true && docker rm $SERVICE_NAME || true"
+    - ssh $EC2_USER@$EC2_PUBLIC_IP "docker run -d --name $SERVICE_NAME -p $SERVICE_PORT:$SERVICE_PORT $CI_REGISTRY_IMAGE/$SERVICE_NAME:$CI_COMMIT_REF_SLUG"
