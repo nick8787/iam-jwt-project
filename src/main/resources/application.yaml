@@ -1,0 +1,47 @@
+server:
+  port: 8189
+  servlet:
+    context-path: /
+
+jwt:
+  secret: 984hg493gh0439rthr0429uruj2309yh937gc763fe87t3f89723gf
+  lifetime: 3000124
+
+spring:
+  application:
+    name: iam-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: Kolya8787
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+#Logger
+logging:
+  level:
+    root: INFO
+    org.springframework.web: DEBUG
+    org.hibernate: DEBUG
+
+# Iam service configuration
+end:
+  points:
+    id: /{id}
+    users: /users
+    posts: /posts
+    create: /create
+
+#Swagger
+swagger:
+  servers:
+    first: http://localhost:8189
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

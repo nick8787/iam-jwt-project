@@ -1,0 +1,24 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Kolya8787
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5433:5432" # Измените локальный порт на 5433
+
+  jwt-app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8189:8189"
+    depends_on:
+      - postgres
+    environment:
+      POSTGRES_USERNAME: postgres
+      POSTGRES_PASSWORD: Kolya8787
+      POSTGRES_DB: mydatabase
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mydatabase
