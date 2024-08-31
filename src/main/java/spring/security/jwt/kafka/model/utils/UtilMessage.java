@@ -8,10 +8,9 @@ import java.io.Serializable;
 @Data
 @Builder
 public class UtilMessage implements Serializable {
-    private Integer tenantId;
-    private Integer organizationId;
+    private Integer userId;
     private ActionType actionType;
     private PriorityType priorityType;
-    private ICASAService service;
+    private PostWaveService service;
     private String message;
 }

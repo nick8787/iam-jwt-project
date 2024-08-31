@@ -1,6 +1,7 @@
 package spring.security.jwt.service.model;
 
 import io.swagger.v3.oas.annotations.Hidden;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,7 +14,8 @@ import java.util.*;
 
 @Slf4j
 @Hidden
-public class IcasaUserDetails implements UserDetails {
+@Getter
+public class PostWaveUserDetails implements UserDetails {
     private final String username; // emailAddress
     private final Integer userId;
     private final LocalDateTime lastUpdate;
@@ -31,7 +33,7 @@ public class IcasaUserDetails implements UserDetails {
     private final boolean credentialsNonExpired;
     private final boolean enabled;
 
-    public IcasaUserDetails(
+    public PostWaveUserDetails(
             String username, Integer userId, LocalDateTime lastUpdate, RegistrationStatus status, String token,
             Collection<? extends GrantedAuthority> authorities, Integer tenantId, String tenantName,
             List<Integer> organizationIds
@@ -85,30 +87,6 @@ public class IcasaUserDetails implements UserDetails {
     @Override
     public boolean isEnabled() {
         return enabled;
-    }
-
-    public Integer getUserId() {
-        return userId;
-    }
-
-    public Integer getTenantId() {
-        return tenantId;
-    }
-
-    public String getTenantName() {
-        return tenantName;
-    }
-
-    public List<Integer> getOrganizationIds() {
-        return organizationIds;
-    }
-
-    public LocalDateTime getLastUpdate() {
-        return lastUpdate;
-    }
-
-    public RegistrationStatus getRegistrationStatus() {
-        return registrationStatus;
     }
 
     private static SortedSet<GrantedAuthority> sortAuthorities(Collection<? extends GrantedAuthority> authorities) {

@@ -11,11 +11,7 @@
             <pattern>%highlight(%d{yyyy-MMM-dd HH:mm:ss.SSS}) %red(%-5level) %cyan([%thread]) %magenta(%logger{15}) - %msg%n</pattern>
         </encoder>
 
-<!--        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">-->
-<!--            <fileNamePattern>/srv/logs/iam-service.%d{yyyy-MM-dd}.%i.log</fileNamePattern>-->
-<!--            <maxFileSize>10MB</maxFileSize>-->
-<!--            <maxHistory>10</maxHistory>-->
-<!--        </rollingPolicy>-->
+
     </appender>
 
     <root level="INFO">

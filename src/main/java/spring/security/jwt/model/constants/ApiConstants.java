@@ -20,9 +20,10 @@ public final class ApiConstants {
     public static final String SUCCESSFUL = "Successful";
     public static final String FAILED = "Failed";
     public static final String UNDEFINED = "undefined";
-    public static final String DEFAULT_PACKAGE_NAME = "com.ocpi.icasa.iam";
+    public static final String DEFAULT_PACKAGE_NAME = "com.post_wave.iam";
     public static final String SECURITY_PACKAGE_NAME = "org.springframework.security";
     public static final String TIME_ZONE_PACKAGE_NAME = "java.time.zone";
+    public static final String DASH_DELETED = "-deleted";
     public static final String JAVAX_VALIDATION_PACKAGE_NAME = "javax.validation";
     public static final String SPRING_WEB_BIND_PACKAGE_NAME = "org.springframework.web.bind";
     public static final String APACHE_COMMONS_LANG3_PACKAGE_NAME = "org.apache.commons.lang3";

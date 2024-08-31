@@ -13,7 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 public class UserProfileDto implements Serializable {
     private Integer id;
-    private String name;
+    private String username;
     private String email;
 
     private RegistrationStatus registrationStatus;

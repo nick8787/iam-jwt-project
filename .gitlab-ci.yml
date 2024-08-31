@@ -1,16 +1,68 @@
 stages:
-  - build jar
-  - build docker
+  - image_logs
+  - docker_stop
+  - data_check
+  - build_jar
+  - build_docker
   - deploy
 
 variables:
-  SERVICE_PORT: 7000
-  SERVICE_NAME: iam-service
+  SERVICE_PORT: 8189
+  SERVICE_NAME: iam-jwt-project
+  HOST: "$HOST"
+  CI_REGISTRY: "$CI_REGISTRY"
+  CI_REGISTRY_USER: "$CI_REGISTRY_USER"
+  CI_REGISTRY_PASSWORD: "$CI_REGISTRY_PASSWORD"
 
-build jar:
-  image: maven:3.6.1-jdk-11
-  stage: build jar
+before_script:
+  - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+  - eval $(ssh-agent -s)
+  - echo "$SSH_PRIVATE_KEY" | base64 -d | tr -d '\r' | ssh-add -
+  - mkdir -p ~/.ssh
+  - 'echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+
+image_logs:
+  image: docker:24.0.5
+  stage: image_logs
   when: manual
+
+  script:
+    - ssh root@$HOST "docker logs --tail 1000 $SERVICE_NAME"
+
+docker_stop:
+  stage: docker_stop
+  when: manual
+
+  script:
+    - ssh root@$HOST "docker stop $SERVICE_NAME"
+    - ssh root@$HOST "docker rm $SERVICE_NAME"
+
+data_check:
+  image: docker:24.0.5
+  stage: data_check
+  when: manual
+
+  script:
+    - |
+      set -e
+      echo DOCKER_NETWORK $DOCKER_NETWORK
+      echo CI_REGISTRY $CI_REGISTRY
+      echo CI_REGISTRY_USER $CI_REGISTRY_USER
+      echo CI_REGISTRY_PASSWORD $CI_REGISTRY_PASSWORD
+      ssh root@$HOST "docker ps -a"
+
+build_jar:
+  image: maven:3.6.1-jdk-11
+  stage: build_jar
+  when: manual
+
+  cache:
+    key: maven-cache
+    paths:
+      - ./.m2
+
+  variables:
+    MAVEN_OPTS: "-Dmaven.repo.local=./.m2/repository"
 
   script:
     - mvn clean install
@@ -19,32 +71,55 @@ build jar:
     paths:
       - target/*.jar
 
-build docker:
+build_docker:
   image: docker:24.0.5
-  stage: build docker
+  stage: build_docker
   needs:
-    - build jar
+    - build_jar
+  services:
+    - docker:dind
 
   script:
-    - docker build -t $CI_REGISTRY_IMAGE/$SERVICE_NAME:$CI_COMMIT_REF_SLUG .
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker push $CI_REGISTRY_IMAGE/$SERVICE_NAME:$CI_COMMIT_REF_SLUG
+    - |
+      set -e
+      echo "!!!!!  Start build job   !!!!!"
+      echo "CI_COMMIT_BRANCH $CI_COMMIT_BRANCH"
+      echo "CI_PIPELINE_ID $CI_PIPELINE_ID"
+
+      docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+      echo "!!!!!   LOGIN IS SUCCESSFUL  !!!!!"
+      
+      docker build -f docker/Dockerfile -t $CI_REGISTRY/$CI_REGISTRY_USER/$SERVICE_NAME:$CI_COMMIT_BRANCH-$CI_PIPELINE_ID .
+      echo "!!!!!   Built  !!!!!"
+
+      docker push "$CI_REGISTRY/$CI_REGISTRY_USER/$SERVICE_NAME:$CI_COMMIT_BRANCH-$CI_PIPELINE_ID"
+      echo "Docker image pushed to $CI_REGISTRY/$CI_REGISTRY_USER/$SERVICE_NAME:$CI_COMMIT_BRANCH-$CI_PIPELINE_ID"
 
 deploy:
   image: docker:24.0.5
   stage: deploy
   needs:
-    - build jar
-    - build docker
+    - build_docker
+  services:
+    - docker:dind
   when: manual
-  before_script:
-    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
-    - eval $(ssh-agent -s)
-    - echo "$PRIVATE_SSH_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh
-    - echo "Host $EC2_PUBLIC_IP\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
 
   script:
-    - ssh $EC2_USER@$EC2_PUBLIC_IP "docker pull $CI_REGISTRY_IMAGE/$SERVICE_NAME:$CI_COMMIT_REF_SLUG"
-    - ssh $EC2_USER@$EC2_PUBLIC_IP "docker stop $SERVICE_NAME || true && docker rm $SERVICE_NAME || true"
-    - ssh $EC2_USER@$EC2_PUBLIC_IP "docker run -d --name $SERVICE_NAME -p $SERVICE_PORT:$SERVICE_PORT $CI_REGISTRY_IMAGE/$SERVICE_NAME:$CI_COMMIT_REF_SLUG"
+    - |
+      echo "!!!!! Start deploy job !!!!!"
+      echo "!!!!! CI_REGISTRY_USER '$CI_REGISTRY_USER' !!!!!"
+      echo "!!!!! CI_REGISTRY_PASSWORD '$CI_REGISTRY_PASSWORD' !!!!!"
+      ssh root@$HOST "docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
+      echo "!!!!! LOGIN IS SUCCESSFUL !!!!!"
+      
+      ssh root@$HOST "docker system prune -af"
+      ssh root@$HOST "docker pull $CI_REGISTRY/$CI_REGISTRY_USER/$SERVICE_NAME:$CI_COMMIT_BRANCH-$CI_PIPELINE_ID"
+      echo "!!!!! PULL is SUCCESSFUL !!!!!"
+      
+      ssh root@$HOST "docker stop $SERVICE_NAME || true"
+      ssh root@$HOST "docker rm $SERVICE_NAME || true"
+      echo "!!!!! Docker stop and rm is SUCCESSFUL !!!!!"
+
+      echo "!!!!! RUNNING DOCKER !!!!!"
+      ssh root@$HOST "docker run -d --restart unless-stopped --name=$SERVICE_NAME -p $SERVICE_PORT:$SERVICE_PORT $CI_REGISTRY/$CI_REGISTRY_USER/$SERVICE_NAME:$CI_COMMIT_BRANCH-$CI_PIPELINE_ID"
+      echo "!!!!! Docker run is SUCCESSFUL !!!!!"

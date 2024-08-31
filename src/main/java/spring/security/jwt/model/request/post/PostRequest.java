@@ -1,4 +1,4 @@
-package spring.security.jwt.model.dto.post;
+package spring.security.jwt.model.request.post;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,7 +19,7 @@ public class PostRequest implements Serializable {
     private String content;
     @NotNull(message = "Specify the number of likes")
     private Integer likes;
-    @NotBlank(message = "Add image URL")
+//    @NotBlank(message = "Add image URL")
     private String image;
 
 }

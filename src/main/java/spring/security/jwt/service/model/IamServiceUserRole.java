@@ -8,9 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @AllArgsConstructor
 public enum IamServiceUserRole {
-    ROLE_USER("ROLE_USER"),
-    ROLE_ADMIN("ROLE_ADMIN"),
-    ROLE_SUPER_ADMIN("SUPER_ADMIN");
+    USER("USER"),
+    ADMIN("ADMIN"),
+    SUPER_ADMIN("SUPER_ADMIN");
 
     private final String role;
 
@@ -24,4 +24,7 @@ public enum IamServiceUserRole {
         throw new IllegalArgumentException("Invalid role name: " + name);
     }
 
+    public static boolean isAdminRole(String role) {
+        return ADMIN.getRole().equals(role) || SUPER_ADMIN.getRole().equals(role);
+    }
 }

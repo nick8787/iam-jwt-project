@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public enum RegistrationStatus {
-    PENDING_CONFIRMATION, ACTIVE, INACTIVE
+    ACTIVE, INACTIVE
 
 }
 

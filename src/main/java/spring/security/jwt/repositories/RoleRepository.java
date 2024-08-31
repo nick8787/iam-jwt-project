@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 import spring.security.jwt.model.entities.Role;
 
 import java.util.LinkedList;
+import java.util.Optional;
 
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Integer> {
@@ -15,5 +16,7 @@ public interface RoleRepository extends JpaRepository<Role, Integer> {
             + "JOIN r.users u "
             + "WHERE r.active = true and u.id = ?1 ")
     LinkedList<Role> findActiveRolesByUserIdAndActiveIsTrue(Integer userId);
+
+    Optional<Role> findByName(String name);
 
 }

@@ -29,6 +29,6 @@ import java.lang.annotation.Target;
                 defaultValue = "20"
         )
 )
-public @interface SwaggerIcasaPageable {
+public @interface SwaggerIamPageable {
 
 }

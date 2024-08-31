@@ -2,15 +2,14 @@ package spring.security.jwt.model.request.user;
 
 import lombok.Data;
 
-import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 @Data
 public class LoginRequest implements Serializable {
-    @Email
-    private String email;
+    @NotNull
+    private String username;
     @NotEmpty
     private String password;
-
 }

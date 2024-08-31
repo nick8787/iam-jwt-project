@@ -2,18 +2,18 @@ package spring.security.jwt.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 import spring.security.jwt.model.IamResponse;
-import spring.security.jwt.model.constants.ApiErrorMessage;
 import spring.security.jwt.model.constants.ApiLogMessage;
-import spring.security.jwt.model.dto.user.LoginRequest;
+import spring.security.jwt.model.request.user.RegistrationUserRequest;
+import spring.security.jwt.model.request.user.LoginRequest;
 import spring.security.jwt.model.response.UserProfileDto;
 import spring.security.jwt.service.AuthService;
 import spring.security.jwt.utils.ApiUtils;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 @Slf4j
@@ -24,24 +24,44 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
+    public ResponseEntity<?> login(
+            @RequestBody @Valid LoginRequest request,
+            HttpServletResponse response
+    ) {
         log.trace(ApiLogMessage.NAME_OF_CURRENT_METHOD.getValue(), ApiUtils.getMethodName());
 
-        try {
-            IamResponse<UserProfileDto> response = authService.login(request);
-            return ResponseEntity.ok(response);
-        } catch (BadCredentialsException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiErrorMessage.INVALID_USER_OR_PASSWORD.getMessage());
-        }
+        IamResponse<UserProfileDto> result = authService.login(request);
+        Cookie authorizationCookie = ApiUtils.createAuthCookie(result.getPayload().getToken());
+        response.addCookie(authorizationCookie);
+
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(
+            @RequestBody @Valid RegistrationUserRequest request,
+            HttpServletResponse response
+    ) {
+        log.trace(ApiLogMessage.NAME_OF_CURRENT_METHOD.getValue(), ApiUtils.getMethodName());
+
+        IamResponse<UserProfileDto> result = authService.registerUser(request);
+        Cookie authorizationCookie = ApiUtils.createAuthCookie(result.getPayload().getToken());
+        response.addCookie(authorizationCookie);
+
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/refresh/token")
     public ResponseEntity<IamResponse<UserProfileDto>> refreshToken(
-            @RequestParam(name = "token") String refreshToken
+            @RequestParam(name = "token") String refreshToken,
+            HttpServletResponse response
     ) {
         log.trace(ApiLogMessage.NAME_OF_CURRENT_METHOD.getValue(), ApiUtils.getMethodName());
 
         IamResponse<UserProfileDto> result = authService.refreshTokens(refreshToken);
+        Cookie authorizationCookie = ApiUtils.createAuthCookie(result.getPayload().getToken());
+        response.addCookie(authorizationCookie);
+
         return ResponseEntity.ok(result);
     }
 

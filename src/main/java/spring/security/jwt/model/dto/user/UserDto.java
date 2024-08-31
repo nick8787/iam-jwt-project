@@ -11,11 +11,12 @@ import java.util.List;
 
 @Data
 @AllArgsConstructor
-public class UserDto implements Serializable {
+public class UserDTO implements Serializable {
 
     private Integer id;
     private String username;
     private String email;
+    private String phoneNumber;
     private LocalDateTime lastLogin;
 
     private RegistrationStatus registrationStatus;

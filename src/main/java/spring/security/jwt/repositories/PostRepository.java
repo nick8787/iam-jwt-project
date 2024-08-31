@@ -8,10 +8,12 @@ import java.util.Optional;
 
 public interface PostRepository extends JpaRepository<Post, Integer> {
 
-    Optional<Post> findById (Integer id);
+    Optional<Post> findByIdAndDeletedFalse (Integer id);
 
     boolean existsByTitle(String title);
 
-    LinkedList<Post> findAllByUserId(Integer userId);
+    LinkedList<Post> findAllByUserIdAndDeletedFalse(Integer userId);
+
+    LinkedList<Post> findAllByDeletedFalse();
 
 }
